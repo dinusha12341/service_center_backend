@@ -13,8 +13,7 @@ namespace backend.Persistence
             IConfiguration configuration)
         {
             var connectionString =
-                configuration["DATABASE_URL"]
-                ?? configuration.GetConnectionString("DefaultConnection");
+                configuration.GetConnectionString("DefaultConnection");
 
             if (string.IsNullOrWhiteSpace(connectionString))
             {
