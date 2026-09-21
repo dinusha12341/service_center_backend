@@ -12,14 +12,28 @@ namespace backend.Persistence
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            var connectionString =
-                configuration.GetConnectionString("DefaultConnection");
+            var host = configuration["PGHOST"];
+            var port = configuration["PGPORT"];
+            var database = configuration["PGDATABASE"];
+            var username = configuration["PGUSER"];
+            var password = configuration["PGPASSWORD"];
 
-            if (string.IsNullOrWhiteSpace(connectionString))
+            if (string.IsNullOrWhiteSpace(host) ||
+                string.IsNullOrWhiteSpace(port) ||
+                string.IsNullOrWhiteSpace(database) ||
+                string.IsNullOrWhiteSpace(username) ||
+                string.IsNullOrWhiteSpace(password))
             {
                 throw new InvalidOperationException(
-                    "Database connection string is not configured.");
+                    "Railway PostgreSQL environment variables are not configured correctly.");
             }
+
+            var connectionString =
+                $"Host={host};" +
+                $"Port={port};" +
+                $"Database={database};" +
+                $"Username={username};" +
+                $"Password={password};";
 
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(connectionString));
