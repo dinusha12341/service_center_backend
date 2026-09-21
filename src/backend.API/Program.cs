@@ -14,8 +14,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllers();
-builder.Services.AddPersistence(builder.Configuration);      
-builder.Services.AddInfrastructure(builder.Configuration);   
+builder.Services.AddPersistence(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 builder.Services.AddAuthentication(options =>
@@ -79,21 +79,30 @@ using (var scope = app.Services.CreateScope())
     {
         var db = services.GetRequiredService<ApplicationDbContext>();
 
-        if (db.Database.CanConnect())
+        await db.Database.OpenConnectionAsync();
+
+        logger.LogInformation("✅ Database connection opened successfully.");
+
+        await db.Database.CloseConnectionAsync();
+
+        if (app.Configuration.GetValue<bool>("ApplyMigrationsAtStartup", false))
         {
-            logger.LogInformation("✅ Database connected successfully.");
-        }
-        else
-        {
-            logger.LogError("❌ Unable to connect to the database.");
+            logger.LogInformation("🔄 Applying pending database migrations...");
+
+            await db.Database.MigrateAsync();
+
+            logger.LogInformation("✅ Database migrations applied successfully.");
         }
     }
     catch (Exception ex)
     {
         logger.LogError(ex, "❌ Database connection failed.");
+        Console.WriteLine("========== DATABASE ERROR ==========");
+        Console.WriteLine(ex.ToString());
+        Console.WriteLine("====================================");
     }
 }
-app.UseAuthentication();   
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
